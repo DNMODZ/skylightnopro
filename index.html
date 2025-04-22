@@ -1,0 +1,328 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio - Programmer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            transition: background-color 0.5s ease, color 0.5s ease;
+        }
+        .light-theme {
+            background: #f7fafc;
+            color: #2d3748;
+        }
+        .dark-theme {
+            background: #1a202c;
+            color: #e2e8f0;
+        }
+        .code-text {
+            font-family: 'Fira Code', monospace;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .light-theme .code-text {
+            background: #edf2f7;
+        }
+        .dark-theme .code-text {
+            background: #2d3748;
+        }
+        .navbar {
+            backdrop-filter: blur(10px);
+            transition: background 0.5s ease;
+        }
+        .light-theme .navbar {
+            background: rgba(255, 255, 255, 0.9);
+        }
+        .dark-theme .navbar {
+            background: rgba(26, 32, 44, 0.9);
+        }
+        .portfolio-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .portfolio-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        .theme-toggle {
+            position: relative;
+            width: 48px;
+            height: 24px;
+            background: #4a5568;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        .theme-toggle .toggle-circle {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+        }
+        .dark-theme .theme-toggle {
+            background: #68d391;
+        }
+        .dark-theme .theme-toggle .toggle-circle {
+            transform: translateX(24px);
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Fira+Code&display=swap" rel="stylesheet">
+</head>
+<body class="light-theme">
+    <!-- Navbar -->
+    <nav class="navbar fixed top-0 w-full z-50 shadow-md">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <img src="https://via.placeholder.com/40" alt="Logo" class="w-10 h-10 rounded-full">
+                <span class="text-xl font-bold">Your Name</span>
+            </div>
+            <div class="flex items-center space-x-6">
+                <a href="#home" class="hover:text-green-600 transition">Home</a>
+                <a href="#about" class="hover:text-green-600 transition">About</a>
+                <a href="#portfolio" class="hover:text-green-600 transition">Portfolio</a>
+                <a href="#skills" class="hover:text-green-600 transition">Skills</a>
+                <a href="#contact" class="hover:text-green-600 transition">Contact</a>
+                <div class="theme-toggle" onclick="toggleTheme()">
+                    <div class="toggle-circle"></div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="min-h-screen flex items-center justify-center pt-16">
+        <div class="text-center">
+            <h1 class="text-5xl font-bold mb-4">Hello, I'm Your Name</h1>
+            <p class="text-xl mb-6 code-text">Python & Lua Developer</p>
+            <a href="#portfolio" class="bg-green-600 hover:bg-green-700 text-white py-2 px-6 rounded-full text-lg transition">View My Work</a>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="py-20 px-6">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center">
+            <img src="https://via.placeholder.com/300" alt="Profile" class="w-64 h-64 rounded-full mb-6 md:mb-0 md:mr-8 shadow-lg">
+            <div>
+                <h2 class="text-4xl font-bold mb-6">About Me</h2>
+                <p class="text-lg mb-4">Hi, I'm <span class="font-semibold">Your Name</span>, a dedicated programmer skilled in <span class="code-text">Python</span> and <span class="code-text">Lua</span>. I study at <span class="font-semibold">Your School Name</span>, where I honed my craft in building robust and efficient applications.</p>
+                <p class="text-lg">I specialize in creating seamless solutions, from web apps to game scripts, with a focus on clean code and user experience.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Portfolio Section -->
+    <section id="portfolio" class="py-20 bg-gray-100 dark:bg-gray-800 transition-colors duration-500">
+        <div class="max-w-6xl mx-auto px-6">
+            <h2 class="text-4xl font-bold mb-6 text-center">Portfolio</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="portfolio-card bg-white dark:bg-gray-700 p-6 rounded-lg shadow-lg">
+                    <img src="https://via.placeholder.com/300x200" alt="Project 1" class="w-full h-48 object-cover rounded-md mb-4">
+                    <h3 class="text-xl font-semibold mb-2">Python Web App</h3>
+                    <p>A Flask-based web application for task management with real-time updates.</p>
+                </div>
+                <div class="portfolio-card bg-white dark:bg-gray-700 p-6 rounded-lg shadow-lg">
+                    <img src="https://via.placeholder.com/300x200" alt="Project 2" class="w-full h-48 object-cover rounded-md mb-4">
+                    <h3 class="text-xl font-semibold mb-2">Lua Game Script</h3>
+                    <p>Scripted a multiplayer game in Roblox using Lua for dynamic gameplay mechanics.</p>
+                </div>
+                <div class="portfolio-card bg-white dark:bg-gray-700 p-6 rounded-lg shadow-lg">
+                    <img src="https://via.placeholder.com/300x200" alt="Project 3" class="w-full h-48 object-cover rounded-md mb-4">
+                    <h3 class="text-xl font-semibold mb-2">Automation Tool</h3>
+                    <p>Built a Python script to automate data processing for a local business.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Skills Section -->
+    <section id="skills" class="py-20 px-6">
+        <div class="max-w-6xl mx-auto">
+            <h2 class="text-4xl font-bold mb-6 text-center">Skills</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="p-6 bg-white dark:bg-gray-700 rounded-lg shadow-lg">
+                    <h3 class="text-2xl font-semibold mb-2">Python</h3>
+                    <p>Expert in building web apps, automation scripts, and data-driven solutions with frameworks like Flask, Django, and Pandas.</p>
+                </div>
+                <div class="p-6 bg-white dark:bg-gray-700 rounded-lg shadow-lg">
+                    <h3 class="text-2xl font-semibold mb-2">Lua</h3>
+                    <p>Proficient in scripting for games and embedded systems, with experience in Roblox, Corona SDK, and custom Lua environments.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="py-20 bg-gray-100 dark:bg-gray-800 transition-colors duration-500">
+        <div class="max-w-6xl mx-auto text-center px-6">
+            <h2 class="text-4xl font-bold mb-6">Get in Touch</h2>
+            <p class="text-lg mb-8">Interested in collaborating? Let's create something amazing together.</p>
+            <a href="mailto:your.email@example.com" class="bg-green-600 hover:bg-green-700 text-white py-2 px-6 rounded-full text-lg transition">Contact Me</a>
+        </div>
+    </section>
+
+    <script>
+        // Theme Toggle Functionality
+        function toggleTheme() {
+            const body = document.body;
+            const isDark = body.classList.contains('dark-theme');
+            const newTheme = isDark ? 'light-theme' : 'dark-theme';
+            const oldTheme = isDark ? 'dark-theme' : 'light-theme';
+
+            // GSAP animation for theme transition
+            gsap.to(body, {
+                duration: 0.5,
+                backgroundColor: newTheme === 'dark-theme' ? '#1a202c' : '#f7fafc',
+                color: newTheme === 'dark-theme' ? '#e2e8f0' : '#2d3748',
+                ease: 'power2.inOut',
+                onStart: () => {
+                    body.classList.remove(oldTheme);
+                    body.classList.add(newTheme);
+                }
+            });
+
+            // Animate navbar background
+            gsap.to('.navbar', {
+                duration: 0.5,
+                background: newTheme === 'dark-theme' ? 'rgba(26, 32, 44, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+                ease: 'power2.inOut'
+            });
+
+            // Animate portfolio and contact section backgrounds
+            gsap.to('#portfolio, #contact', {
+                duration: 0.5,
+                backgroundColor: newTheme === 'dark-theme' ? '#2d3748' : '#edf2f7',
+                ease: 'power2.inOut'
+            });
+
+            // Animate card backgrounds
+            gsap.to('.portfolio-card, #skills .p-6', {
+                duration: 0.5,
+                backgroundColor: newTheme === 'dark-theme' ? '#4a5568' : '#ffffff',
+                ease: 'power2.inOut'
+            });
+        }
+
+        // GSAP Animations for Sections
+        gsap.from("#home h1", { opacity: 0, y: -50, duration: 1.5, ease: "power2.out" });
+        gsap.from("#home p", { opacity: 0, y: 50, duration: 1.5, delay: 0.5, ease: "power2.out" });
+        gsap.from("#home a", { opacity: 0, scale: 0.5, duration: 1, delay: 1, ease: "back.out(1.7)" });
+
+        gsap.registerPlugin(ScrollTrigger);
+
+        gsap.from("#about h2", {
+            scrollTrigger: "#about",
+            opacity: 0,
+            y: 100,
+            duration: 1,
+            ease: "power2.out"
+        });
+        gsap.from("#about img, #about p", {
+            scrollTrigger: "#about",
+            opacity: 0,
+            y: 50,
+            duration: 1,
+            delay: 0.3,
+            stagger: 0.2,
+            ease: "power2.out"
+        });
+
+        gsap.from("#portfolio h2", {
+            scrollTrigger: "#portfolio",
+            opacity: 0,
+            y: 100,
+            duration: 1,
+            ease: "power2.out"
+        });
+        gsap.from(".portfolio-card", {
+            scrollTrigger: "#portfolio",
+            opacity: 0,
+            y: 50,
+            duration: 1,
+            delay: 0.3,
+            stagger: 0.2,
+            ease: "power2.out"
+        });
+
+        gsap.from("#skills h2", {
+            scrollTrigger: "#skills",
+            opacity: 0,
+            y: 100,
+            duration: 1,
+            ease: "power2.out"
+        });
+        gsap.from("#skills .p-6", {
+            scrollTrigger: "#skills",
+            opacity: 0,
+            scale: 0.8,
+            duration: 1,
+            stagger: 0.2,
+            ease: "power2.out"
+        });
+
+        gsap.from("#contact h2", {
+            scrollTrigger: "#contact",
+            opacity: 0,
+            y: 100,
+            duration: 1,
+            ease: "power2.out"
+        });
+        gsap.from("#contact p, #contact a", {
+            scrollTrigger: "#contact",
+            opacity: 0,
+            y: 50,
+            duration: 1,
+            delay: 0.3,
+            stagger: 0.2,
+            ease: "power2.out"
+        });
+    </script>
+</body>
+</html>
